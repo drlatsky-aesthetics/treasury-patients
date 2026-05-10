@@ -275,7 +275,7 @@ let S = {
   amNotes: '', pmNotes: '',
   // Custom note sections
   customNotes: [], // [{id, title, body}]
-  ghUser: 'drlatsky-aesthetics', ghRepo: '', ghToken: '', ghDomain: '',
+  ghUser: 'drjlatsky', ghRepo: '', ghToken: '', ghDomain: '',
   cfgSaved: false,
   publishing: false,
   pubStatus: null,  // {type:'ok'|'err'|'loading', msg, url}
@@ -1047,7 +1047,7 @@ function tabPublish() {
       <div class="g2" style="gap:12px;margin-bottom:12px">
         <div>
           <label class="lbl">GITHUB USERNAME</label>
-          <input class="inp" id="gh-user" value="${esc(S.ghUser)}" placeholder="drlatsky-aesthetics">
+          <input class="inp" id="gh-user" value="${esc(S.ghUser)}" placeholder="drjlatsky">
         </div>
         <div>
           <label class="lbl">REPOSITORY NAME</label>
@@ -1087,7 +1087,7 @@ function tabPublish() {
       ${[
         ['Create a free GitHub account','github.com/signup — then create a new repository. Suggested name: <span class="step-code">patient-pages</span>'],
         ['Enable GitHub Pages','Repo → Settings → Pages → Source: Deploy from branch (main, / root) → Save'],
-        ['Set your custom domain','In Pages settings enter <span class="step-code">plans.treasuryaesthetics.ca</span> — then add a CNAME DNS record at your registrar: <span class="step-code">plans → drlatsky-aesthetics.github.io</span>'],
+        ['Set your custom domain','In Pages settings enter <span class="step-code">plans.treasuryaesthetics.ca</span> — then add a CNAME DNS record at your registrar: <span class="step-code">plans → drjlatsky.github.io</span>'],
         ['Generate a Personal Access Token','GitHub → Settings → Developer Settings → Personal Access Tokens (classic) → New token → tick <span class="step-code">repo</span> → copy the token'],
         ['Paste config above and Save','From this point, every patient page publishes in one click.'],
       ].map(([t,d],i)=>`<div class="step"><div class="step-n">${i+1}</div><div><div class="step-title">${t}</div><div class="step-detail">${d}</div></div></div>`).join('')}
