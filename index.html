@@ -338,7 +338,7 @@ const ghReady  = () => !!S.ghUser && !!S.ghRepo && !!S.ghToken;
 // ══════════════════════════════════════════════════════════════
 
 function saveConfig() {
-  localStorage.setItem('ta-gh', JSON.stringify({
+  localStorage.setItem('ta-gh-cadence', JSON.stringify({
     ghUser:S.ghUser, ghRepo:S.ghRepo, ghToken:S.ghToken, ghDomain:S.ghDomain
   }));
   S.cfgSaved = true; render();
@@ -347,7 +347,7 @@ function saveConfig() {
 
 function loadConfig() {
   try {
-    const r = JSON.parse(localStorage.getItem('ta-gh')||'{}');
+    const r = JSON.parse(localStorage.getItem('ta-gh-cadence')||'{}');
     if (r.ghUser)   S.ghUser   = r.ghUser;
     if (r.ghRepo)   S.ghRepo   = r.ghRepo;
     if (r.ghToken)  S.ghToken  = r.ghToken;
