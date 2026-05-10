@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Treasury Aesthetics — Patient Page Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#C4954A; --gold2:#D4AF37;
+  --dark:#080808; --card:#111; --card2:#161616;
+  --border:#1E1E1E; --border2:#2A2A2A;
+  --text:#EDE8E0; --muted:#666;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--text);min-height:100vh;font-size:13px;overflow-x:hidden}
+
+/* ── TOP BAR ── */
+#topbar{
+  background:#0A0A0A;border-bottom:1px solid var(--border);
+  padding:13px 28px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:200;
+}
+.tb-left .logo{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:5px;color:var(--gold)}
+.tb-left .sub{font-size:10px;color:#3A3A3A;margin-top:2px;letter-spacing:1px}
+.tb-right{font-family:'DM Mono',monospace;font-size:10px;color:#3A3A3A;text-align:right;line-height:1.7}
+.tb-right b{color:var(--gold)}
+
+/* ── TABS ── */
+#tabs{
+  background:#080808;border-bottom:1px solid var(--border);
+  display:flex;align-items:stretch;position:sticky;top:51px;z-index:199;
+}
+.tab{
+  padding:12px 22px;border:none;background:transparent;
+  color:#4A4A4A;cursor:pointer;font-size:11px;font-weight:400;
+  letter-spacing:1.5px;border-bottom:2px solid transparent;
+  font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap;
+}
+.tab.on{color:var(--gold);font-weight:600;border-bottom-color:var(--gold)}
+.tab-meta{margin-left:auto;padding:0 20px;display:flex;align-items:center;gap:18px}
+.tab-sessions{font-size:11px;color:#3A3A3A}
+.tab-total{font-family:'DM Mono',monospace;font-size:15px;color:var(--gold);font-weight:700}
+
+/* ── CONTENT ── */
+#content{padding:26px 30px;max-width:880px;margin:0 auto}
+
+/* ── INPUTS ── */
+.inp{
+  background:#0C0C0C;border:1px solid #222;border-radius:8px;
+  color:var(--text);padding:10px 14px;font-size:13px;width:100%;
+  font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;
+  -webkit-appearance:none;
+}
+.inp:focus{border-color:var(--gold)}
+.inp::placeholder{color:#333}
+select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23555'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;appearance:none}
+textarea.inp{resize:vertical;min-height:90px}
+.lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:4px;color:#4A4A4A;font-weight:700;margin-bottom:7px;display:block}
+
+/* ── BUTTONS ── */
+.btn-g{background:var(--gold);border:none;border-radius:6px;color:#000;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1.5px;font-family:'DM Sans',sans-serif;padding:8px 16px;transition:opacity .15s;white-space:nowrap}
+.btn-g:hover{opacity:.84}.btn-g:disabled{opacity:.3;cursor:not-allowed}
+.btn-ghost{background:transparent;border:1px solid #252525;border-radius:6px;color:#4A4A4A;font-size:10px;cursor:pointer;letter-spacing:1px;font-family:'DM Sans',sans-serif;padding:7px 13px;transition:all .15s;white-space:nowrap}
+.btn-ghost:hover{color:#888;border-color:#3A3A3A}
+.btn-ghost.on{background:#1E1600;border-color:var(--gold);color:var(--gold)}
+.btn-ghost.red{color:#E57373;border-color:#E5737333}
+.btn-ghost.green{color:#4CAF50;border-color:#4CAF5044}
+.btn-wide{width:100%;padding:17px;border:none;border-radius:10px;font-size:12px;font-weight:700;letter-spacing:3px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.btn-wide.ready{background:var(--gold);color:#000}
+.btn-wide.off{background:#181818;color:#3A3A3A;cursor:not-allowed}
+
+/* ── LAYOUT GRIDS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.g2 .s2{grid-column:1/-1}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.flex{display:flex;align-items:center;gap:10px}
+.flex-between{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px}
+.card.gold{background:linear-gradient(135deg,#14100A,#1C1610);border-color:#C4954A22}
+.card-row{display:flex;align-items:center;gap:12px}
+
+/* ── PLAN ITEMS (selected treatments / products) ── */
+.plan-row{background:var(--card);border:1px solid #C4954A1A;border-radius:10px;padding:13px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.p-icon{font-size:18px;flex-shrink:0;width:28px;text-align:center}
+.p-info{flex:1;min-width:0}
+.p-cat{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;color:#4A4A4A;margin-bottom:3px}
+.p-name{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-dates{font-size:10px;color:#3A3A3A;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-ctrl{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.qty{font-family:'DM Mono',monospace;font-size:14px;color:var(--gold);width:22px;text-align:center}
+.p-price{font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);min-width:66px;text-align:right}
+
+/* ── CATALOG ITEMS ── */
+.cat-sect{margin-bottom:18px}
+.cat-hdr{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:#383838;margin:18px 0 8px 2px}
+.cat-row{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:11px 14px;display:flex;align-items:center;gap:11px;margin-bottom:5px;transition:border-color .15s}
+.cat-row:hover{border-color:#2A2A2A}
+.c-icon{font-size:17px;flex-shrink:0;width:24px;text-align:center}
+.c-info{flex:1;min-width:0}
+.c-sub{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;color:#3A3A3A;margin-bottom:2px}
+.c-name{font-size:12px;color:var(--text)}
+.c-detail{font-size:10px;color:#3A3A3A;margin-top:1px}
+.c-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.c-price{font-family:'DM Mono',monospace;font-size:11px;color:#555}
+
+/* ── TALLY BAR ── */
+.tally{background:linear-gradient(135deg,#100E06,#161208);border:1px solid #C4954A20;border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.t-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--muted)}
+.t-val{font-family:'DM Mono',monospace;font-size:17px;color:var(--gold);font-weight:700}
+
+/* ── SECTION HEADER (within tabs) ── */
+.sec-hdr{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--gold);margin-bottom:14px}
+
+/* ── ALERTS ── */
+.alert{border-radius:8px;padding:10px 14px;font-size:11px;margin-bottom:10px;line-height:1.5}
+.err{background:#140A0A;border:1px solid #E5737322;color:#E57373}
+.ok{background:#0A140A;border:1px solid #4CAF5022;color:#81C784}
+.info{background:#0D0D0D;border:1px solid var(--border);color:var(--muted)}
+
+/* ── GENERATE TAB ── */
+.gen{max-width:600px;margin:0 auto}
+.summary-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:18px}
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.sum-k{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;color:#444;margin-bottom:4px}
+.sum-v{font-size:13px;color:var(--text)}
+.sum-total{padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.sum-total-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:#555}
+.sum-total-val{font-family:'DM Mono',monospace;font-size:20px;color:var(--gold);font-weight:700}
+
+/* ── GH BOX ── */
+.gh-box{background:#0A0A0A;border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:14px;transition:border-color .2s}
+.gh-box.ready{border-color:#C4954A33}
+.gh-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.gh-title{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--gold)}
+.gh-dot{font-size:10px;color:#4CAF50}
+
+/* ── SETUP STEPS ── */
+.steps-box{background:#0A0A0A;border:1px solid var(--border);border-radius:12px;padding:22px}
+.steps-title{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:#444;margin-bottom:16px}
+.step{display:flex;gap:14px;margin-bottom:14px}
+.step-n{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);font-weight:700;flex-shrink:0;padding-top:1px}
+.step-title{font-size:12px;color:var(--text);font-weight:600;margin-bottom:3px}
+.step-detail{font-size:11px;color:#4A4A4A;line-height:1.6}
+.step-code{font-family:'DM Mono',monospace;font-size:10px;color:#888;background:#060606;padding:2px 6px;border-radius:4px}
+
+/* ── PUBLISHED URL ── */
+.pub-url{color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;text-decoration:none;display:inline-block;margin-top:4px}
+.pub-url:hover{text-decoration:underline}
+
+/* ── SEARCH BAR ── */
+.search-bar{display:flex;gap:10px;margin-bottom:20px}
+
+@media(max-width:640px){
+  #content{padding:16px}
+  .g2,.g3{grid-template-columns:1fr}
+  .g2 .s2{grid-column:1}
+  .sum-grid{grid-template-columns:1fr 1fr}
+  .search-bar{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="tb-left">
+    <div class="logo">TREASURY AESTHETICS</div>
+    <div class="sub">Patient Page Generator</div>
+  </div>
+  <div class="tb-right" id="tb-info">—</div>
+</div>
+
+<div id="tabs">
+  <button class="tab on" data-tab="0">① Patient</button>
+  <button class="tab" data-tab="1">② Treatments</button>
+  <button class="tab" data-tab="2">③ Home Care</button>
+  <button class="tab" data-tab="3">④ Publish</button>
+  <div class="tab-meta">
+    <span class="tab-sessions" id="tab-sessions"></span>
+    <span class="tab-total" id="tab-total">$0</span>
+  </div>
+</div>
+
+<div id="content"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════════════
+
+const TX = [
+  {id:"vrf-ff", cat:"VirtueRF RF Microneedling",     name:"VirtueRF — Full Face",                    price:400,  wk:5,  icon:"⚡"},
+  {id:"vrf-fn", cat:"VirtueRF RF Microneedling",     name:"VirtueRF — Face & Neck",                  price:600,  wk:5,  icon:"⚡"},
+  {id:"ng-lf",  cat:"NOUVAGlo Non-Ablative Laser",   name:"NOUVAGlo Light — Face Only",              price:500,  wk:4,  icon:"✨"},
+  {id:"ng-lfn", cat:"NOUVAGlo Non-Ablative Laser",   name:"NOUVAGlo Light — Face & Neck",            price:700,  wk:4,  icon:"✨"},
+  {id:"ng-lfnc",cat:"NOUVAGlo Non-Ablative Laser",   name:"NOUVAGlo Light — Face, Neck & Chest",     price:800,  wk:4,  icon:"✨"},
+  {id:"ng-mf",  cat:"NOUVAGlo Non-Ablative Laser",   name:"NOUVAGlo Moderate — Face Only",           price:700,  wk:4,  icon:"✨"},
+  {id:"ng-mfn", cat:"NOUVAGlo Non-Ablative Laser",   name:"NOUVAGlo Moderate — Face & Neck",         price:1000, wk:4,  icon:"✨"},
+  {id:"ng-mfnc",cat:"NOUVAGlo Non-Ablative Laser",   name:"NOUVAGlo Moderate — Face, Neck & Chest",  price:1200, wk:4,  icon:"✨"},
+  {id:"ng-xf",  cat:"NOUVAGlo Non-Ablative Laser",   name:"NOUVAGlo Max — Face Only",                price:850,  wk:4,  icon:"✨"},
+  {id:"ng-xfn", cat:"NOUVAGlo Non-Ablative Laser",   name:"NOUVAGlo Max — Face & Neck",              price:1100, wk:4,  icon:"✨"},
+  {id:"ng-xfnc",cat:"NOUVAGlo Non-Ablative Laser",   name:"NOUVAGlo Max — Face, Neck & Chest",       price:1400, wk:4,  icon:"✨"},
+  {id:"ng-hair",cat:"NOUVAGlo Hair Support",         name:"Hair Support — with Exosomes",            price:900,  wk:4,  icon:"🌿"},
+  {id:"ng-ab",  cat:"NOUVAGlo Ablative Laser",       name:"NouvaDerm Ablative — Face",               price:2750, wk:12, icon:"🔆"},
+  {id:"ox-pod", cat:"OxyGeneo Signature Facial",     name:"OxyGeneo OxyPod + Ultrasound",            price:255,  wk:3,  icon:"💎"},
+  {id:"ox-rf",  cat:"OxyGeneo Signature Facial",     name:"OxyGeneo Full Face Tripollar RF",         price:225,  wk:3,  icon:"💎"},
+  {id:"ox-neck",cat:"OxyGeneo Signature Facial",     name:"OxyGeneo Face + Neck Tripollar RF",       price:250,  wk:3,  icon:"💎"},
+  {id:"ox-eye", cat:"OxyGeneo Signature Facial",     name:"OxyGeneo Under-Eye Ultrasound",           price:100,  wk:3,  icon:"💎"},
+  {id:"dt-face",cat:"DermaTwist Microneedling",      name:"Collagen Induction — Face",               price:375,  wk:4,  icon:"🔬"},
+  {id:"dt-fn",  cat:"DermaTwist Microneedling",      name:"Collagen Induction — Face & Neck",        price:450,  wk:4,  icon:"🔬"},
+  {id:"dt-str", cat:"DermaTwist Microneedling",      name:"Stretch Marks Renewal",                   price:400,  wk:4,  icon:"🔬"},
+  {id:"dt-hair",cat:"DermaTwist Microneedling",      name:"Hair & Scalp Revitalization",             price:400,  wk:4,  icon:"🔬"},
+  {id:"dt-pig", cat:"DermaTwist Microneedling",      name:"Pigment Correction",                      price:400,  wk:4,  icon:"🔬"},
+  {id:"dt-exo", cat:"DermaTwist Microneedling",      name:"Exosome + PDRN Therapy",                  price:550,  wk:4,  icon:"🔬"},
+  {id:"dt-ha",  cat:"DermaTwist Microneedling",      name:"Exosome + HA Therapy",                    price:550,  wk:4,  icon:"🔬"},
+  {id:"pd-lo",  cat:"PlaDuo Pro Plasma",             name:"Plasma Signature — Low Energy",           price:750,  wk:4,  icon:"🔥"},
+  {id:"pd-me",  cat:"PlaDuo Pro Plasma",             name:"Plasma Signature — Medium Energy",        price:1500, wk:4,  icon:"🔥"},
+  {id:"pd-hi",  cat:"PlaDuo Pro Plasma",             name:"Plasma Signature — High Energy",          price:3000, wk:8,  icon:"🔥"},
+  {id:"pd-acne",cat:"PlaDuo Pro Acne Argon",         name:"Acne Argon Treatment",                    price:600,  wk:1,  icon:"🔥"},
+  {id:"pd-eye", cat:"PlaDuo Pro Eye Revival",        name:"Plasma Eye Revival",                      price:1000, wk:4,  icon:"🔥"},
+  {id:"led",    cat:"LED TriWave Phototherapy",      name:"LED TriWave Session",                     price:75,   wk:1,  icon:"💡"},
+  {id:"carbon", cat:"Quanta Carbon Facial",          name:"Carbon Laser Facial",                     price:300,  wk:3,  icon:"🌑"},
+  {id:"consult",cat:"Consultation",                  name:"Initial Consultation",                    price:250,  wk:0,  icon:"📋"},
+];
+
+const PR = [
+  {id:"n-clean", brand:"Noon",     name:"C-Foaming Cleanser",            desc:"Vitamin C foaming cleanser",                  price:54,  time:"AM/PM"},
+  {id:"n-halo",  brand:"Noon",     name:"Halo-Ronic Hydrating Serum",    desc:"Multi-molecular hyaluronic acid serum",        price:118, time:"AM/PM"},
+  {id:"n-igloo", brand:"Noon",     name:"Igloo Moist",                   desc:"Cooling soothing moisturizer",                price:100, time:"AM/PM"},
+  {id:"n-defl",  brand:"Noon",     name:"DeFlame",                       desc:"Anti-inflammatory calming serum",             price:138, time:"PM"},
+  {id:"n-l10",   brand:"Noon",     name:"Lacto 10",                      desc:"10% lactic acid brightening toner",           price:118, time:"PM"},
+  {id:"n-l15",   brand:"Noon",     name:"Lacto-C 15",                    desc:"15% lactic + vitamin C exfoliant",            price:178, time:"PM"},
+  {id:"n-r03",   brand:"Noon",     name:"Retinol Charisma 0.3%",         desc:"Entry-level retinol with DermShield",         price:128, time:"PM"},
+  {id:"n-r1",    brand:"Noon",     name:"Retinol Charisma 1%",           desc:"Advanced retinol for skin renewal",           price:138, time:"PM"},
+  {id:"n-hydro", brand:"Noon",     name:"HydroCalming + Vit Complex",    desc:"Niacinamide + panthenol + vitamin B",         price:120, time:"AM/PM"},
+  {id:"n-txa",   brand:"Noon",     name:"TXA-Brightening Complex",       desc:"Tranexamic acid hyperpigmentation serum",     price:104, time:"AM"},
+  {id:"n-acno",  brand:"Noon",     name:"AcNo Complex",                  desc:"Acne-targeting spot treatment",               price:98,  time:"PM"},
+  {id:"n-vitc",  brand:"Noon",     name:"Vitamin C Serum (11%)",         desc:"Stable 11% vitamin C brightening serum",      price:94,  time:"AM"},
+  {id:"n-fis",   brand:"Noon",     name:"In-Depth Filler Serum",         desc:"Wrinkle-plumping peptide serum",              price:58,  time:"AM/PM"},
+  {id:"n-fic",   brand:"Noon",     name:"In-Depth Filler Cream",         desc:"Rich anti-aging filler cream",                price:54,  time:"PM"},
+  {id:"n-rs",    brand:"Noon",     name:"Restart Antioxidant Serum",     desc:"Fullerene + resveratrol antioxidant",         price:198, time:"AM"},
+  {id:"n-eye",   brand:"Noon",     name:"Reform Eye Cream",              desc:"5-in-1 periorbital revitalizer",              price:180, time:"AM/PM"},
+  {id:"n-spf",   brand:"Noon",     name:"MultiVit SPF30",                desc:"Daily UV protection with vitamins",           price:90,  time:"AM"},
+  {id:"n-pre",   brand:"Noon",     name:"Pre-Procedure Program Kit",     desc:"Complete pre-treatment preparation kit",      price:318, time:"Pre-tx"},
+  {id:"n-post",  brand:"Noon",     name:"Post-Procedure Program Kit",    desc:"Complete post-treatment recovery kit",        price:318, time:"Post-tx"},
+  {id:"n-kit",   brand:"Noon",     name:"Anti-Aging Starter Kit",        desc:"Retinol + filler serum/cream + peptide",      price:198, time:"AM/PM"},
+  {id:"e-lip",   brand:"Epicutis", name:"Lipid Serum 30ml",              desc:"TSC patented barrier recovery serum",         price:300, time:"AM/PM"},
+  {id:"e-hyvia", brand:"Epicutis", name:"HYVIA Crème 50ml",              desc:"HYVIA chia seed extract moisturizer",         price:270, time:"AM/PM"},
+  {id:"e-clean", brand:"Epicutis", name:"Oil Cleanser 120ml",            desc:"Gentle lipid-based cleansing oil",            price:115, time:"PM"},
+  {id:"e-set",   brand:"Epicutis", name:"Luxury Set (Lipid + HYVIA)",    desc:"Lipid Serum + HYVIA Crème duo",               price:550, time:"AM/PM"},
+  {id:"e-post",  brand:"Epicutis", name:"Post-Procedure Set",            desc:"Oil Cleanser + Lipid Serum + HYVIA + Mask",  price:85,  time:"Post-tx"},
+  {id:"e-mf",    brand:"Epicutis", name:"Lipid Recovery Mask — Face 5ct",desc:"Deep barrier recovery sheet mask",            price:140, time:"As needed"},
+  {id:"e-mn",    brand:"Epicutis", name:"Lipid Recovery Mask — Neck 5ct",desc:"Targeted neck recovery mask",                 price:150, time:"As needed"},
+  {id:"e-mist",  brand:"Epicutis", name:"Hydrobiome Mist 50ml",          desc:"Probiotic hydrating facial mist",             price:96,  time:"AM/PM"},
+  {id:"e-brt",   brand:"Epicutis", name:"Arctigenin Brightening 30ml",   desc:"Burdock root brightening treatment",          price:250, time:"PM"},
+  {id:"e-body",  brand:"Epicutis", name:"Lipid Body Treatment 220ml",    desc:"Full-body barrier repair luxury treatment",   price:300, time:"PM"},
+];
+
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+
+let S = {
+  tab: 0,
+  pt:  {firstName:'', lastName:'', dob:'', startDate:'', concern:'', notes:''},
+  plan: [],    // [{...tx, qty}]
+  prods: [],   // [{...pr, qty, routine}]
+  txQ: '', pdQ: '', brandF: 'All',
+  ghUser: 'drlatsky-aesthetics', ghRepo: '', ghToken: '', ghDomain: '',
+  cfgSaved: false,
+  publishing: false,
+  pubStatus: null,  // {type:'ok'|'err'|'loading', msg, url}
+  downloaded: false,
+};
+
+// ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
+
+const cad = n => '$' + Number(n||0).toLocaleString('en-CA',{minimumFractionDigits:0,maximumFractionDigits:0});
+
+function addWks(iso, w) {
+  if (!iso || !w) return iso||'';
+  const d = new Date(iso+'T12:00:00');
+  d.setDate(d.getDate() + w*7);
+  return d.toISOString().split('T')[0];
+}
+
+const fmtDate = iso => iso
+  ? new Date(iso+'T12:00:00').toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'})
+  : 'TBD';
+
+const esc = s => String(s||'')
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+const slug = () => (S.pt.firstName+S.pt.lastName).toLowerCase().replace(/[^a-z0-9]/g,'');
+
+const pw = () => {
+  if (!S.pt.dob) return '';
+  const [y,m,d] = S.pt.dob.split('-');
+  return `${m}${d}${y}`;
+};
+
+const sessions = () => {
+  const list = [];
+  S.plan.forEach(tx => {
+    for (let i=0; i<tx.qty; i++)
+      list.push({...tx, si:i+1, date:addWks(S.pt.startDate, i*(tx.wk||4))});
+  });
+  return list.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+};
+
+const txTotal  = () => S.plan.reduce((s,i)=>s+i.price*i.qty, 0);
+const pdTotal  = () => S.prods.reduce((s,i)=>s+i.price*i.qty, 0);
+const grand    = () => txTotal()+pdTotal();
+const canPub   = () => !!S.pt.firstName && !!S.pt.dob;
+const ghReady  = () => !!S.ghUser && !!S.ghRepo && !!S.ghToken;
+
+// ══════════════════════════════════════════════════════════════
+// LOCAL STORAGE
+// ══════════════════════════════════════════════════════════════
+
+function saveConfig() {
+  localStorage.setItem('ta-gh', JSON.stringify({
+    ghUser:S.ghUser, ghRepo:S.ghRepo, ghToken:S.ghToken, ghDomain:S.ghDomain
+  }));
+  S.cfgSaved = true; render();
+  setTimeout(()=>{ S.cfgSaved=false; render(); }, 2500);
+}
+
+function loadConfig() {
+  try {
+    const r = JSON.parse(localStorage.getItem('ta-gh')||'{}');
+    if (r.ghUser)   S.ghUser   = r.ghUser;
+    if (r.ghRepo)   S.ghRepo   = r.ghRepo;
+    if (r.ghToken)  S.ghToken  = r.ghToken;
+    if (r.ghDomain) S.ghDomain = r.ghDomain;
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════════════════
+// MUTATIONS
+// ══════════════════════════════════════════════════════════════
+
+function addTx(id) {
+  const t = TX.find(x=>x.id===id); if (!t) return;
+  const ex = S.plan.find(x=>x.id===id);
+  S.plan = ex ? S.plan.map(x=>x.id===id?{...x,qty:x.qty+1}:x) : [...S.plan,{...t,qty:1}];
+  render();
+}
+function removeTx(id)   { S.plan=S.plan.filter(x=>x.id!==id); render(); }
+function adjTxQty(id,d) { S.plan=S.plan.map(x=>x.id===id?{...x,qty:Math.max(1,x.qty+d)}:x); render(); }
+
+function addPr(id) {
+  const p = PR.find(x=>x.id===id); if (!p) return;
+  const ex = S.prods.find(x=>x.id===id);
+  S.prods = ex ? S.prods.map(x=>x.id===id?{...x,qty:x.qty+1}:x) : [...S.prods,{...p,qty:1,routine:p.time}];
+  render();
+}
+function removePr(id)       { S.prods=S.prods.filter(x=>x.id!==id); render(); }
+function adjPrQty(id,d)     { S.prods=S.prods.map(x=>x.id===id?{...x,qty:Math.max(1,x.qty+d)}:x); render(); }
+function setPrRoutine(id,v) { S.prods=S.prods.map(x=>x.id===id?{...x,routine:v}:x); render(); }
+
+// ══════════════════════════════════════════════════════════════
+// BUILD PATIENT HTML
+// ══════════════════════════════════════════════════════════════
+
+function buildHTML() {
+  const sess = sessions();
+  const name = (S.pt.firstName+' '+S.pt.lastName).trim()||'Patient';
+  const firstName = esc(S.pt.firstName||'Patient');
+  const concern   = esc(S.pt.concern||'');
+  const notes     = esc(S.pt.notes||'');
+  const start     = fmtDate(S.pt.startDate);
+  const sl        = slug();
+  const password  = pw();
+  const tx = txTotal(), pd = pdTotal(), gr = grand();
+
+  const safeJ = o => JSON.stringify(o).replace(/<\/script>/gi,'<\\/script>');
+  const sessJ = safeJ(sess.map(s=>({cat:s.cat,name:s.name,si:s.si,qty:s.qty,date:s.date,price:s.price,icon:s.icon||'✨'})));
+  const prodJ = safeJ(S.prods.map(p=>({name:p.name,brand:p.brand,desc:p.desc,price:p.price,routine:p.routine,qty:p.qty})));
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Your Treasury Plan — ${esc(name)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--g:#C4954A;--dk:#080808;--c:#111;--b:#1E1E1E;--b2:#2A2A2A;--t:#EDE8E0;--m:#777;--r:14px}
+body{font-family:'DM Sans',sans-serif;background:var(--dk);color:var(--t);overflow-x:hidden}
+#gate{position:fixed;inset:0;background:var(--dk);display:flex;align-items:center;justify-content:center;z-index:500;padding:20px}
+.gw{background:var(--c);border:1px solid #C4954A44;border-radius:24px;padding:56px 48px;max-width:440px;width:100%;text-align:center;box-shadow:0 0 0 1px #C4954A14,0 60px 100px rgba(0,0,0,.9);animation:fu .6s ease both}
+.gl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:6px;color:var(--g);margin-bottom:8px}
+.gr{width:28px;height:1px;background:linear-gradient(90deg,transparent,var(--g),transparent);margin:0 auto 36px}
+.gt{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;line-height:1.2;color:var(--t);margin-bottom:10px}
+.gt em{color:var(--g);font-style:italic}
+.gs{font-size:13px;color:var(--m);line-height:1.8;margin-bottom:36px}
+.gi{width:100%;padding:16px 20px;background:#050505;border:1px solid var(--b2);border-radius:12px;color:var(--t);font-size:20px;letter-spacing:8px;text-align:center;font-family:'DM Mono',monospace;outline:none;transition:border-color .2s,box-shadow .2s}
+.gi:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(196,149,74,.08)}
+.gi::placeholder{letter-spacing:2px;font-size:11px;color:#2A2A2A;font-family:'DM Sans',sans-serif}
+.gb{width:100%;margin-top:12px;padding:16px;background:var(--g);border:none;border-radius:12px;color:#000;font-size:10px;font-weight:600;letter-spacing:4px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s}
+.gb:hover{opacity:.84}
+.ge{color:#E57373;font-size:11px;margin-top:12px;display:none;animation:sk .3s ease}
+.gh{color:#2A2A2A;font-size:10px;margin-top:18px;letter-spacing:1px}
+#main{display:none;animation:fi .4s ease}
+header{position:sticky;top:0;z-index:100;padding:16px 48px;display:flex;align-items:center;justify-content:space-between;background:rgba(8,8,8,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--b)}
+.hl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:5px;color:var(--g)}
+.hn{font-size:10px;color:#333;letter-spacing:2px;font-family:'DM Mono',monospace}
+.hb{padding:9px 22px;border:1px solid var(--g);border-radius:40px;color:var(--g);font-size:9px;letter-spacing:3px;font-weight:600;text-decoration:none;transition:all .2s}
+.hb:hover{background:var(--g);color:#000}
+.hero{padding:90px 64px 70px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40px;right:-60px;width:480px;height:480px;background:radial-gradient(circle,rgba(196,149,74,.06) 0%,transparent 70%);pointer-events:none}
+.eye{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:6px;color:var(--g);margin-bottom:22px}
+h1{font-family:'Cormorant Garamond',serif;font-size:clamp(44px,5.5vw,70px);font-weight:300;line-height:1.08;margin-bottom:22px}
+h1 em{color:var(--g);font-style:italic}
+.sub{font-size:14px;color:var(--m);line-height:1.9;max-width:460px}
+.pills{display:flex;gap:30px;margin-top:48px;flex-wrap:wrap}
+.pl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:#333;margin-bottom:5px}
+.pv{font-size:13px;color:var(--t);font-weight:500}
+.div{height:1px;background:linear-gradient(90deg,transparent,var(--b2),transparent);margin:0 48px}
+.sec{padding:64px 64px}
+.sh{display:flex;align-items:baseline;gap:18px;margin-bottom:44px}
+.sn{font-family:'DM Mono',monospace;font-size:9px;color:var(--g);letter-spacing:3px}
+h2{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300}
+.sl{display:flex;flex-direction:column;gap:10px}
+.sc{background:var(--c);border:1px solid var(--b);border-radius:var(--r);padding:20px 26px;display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:20px;transition:border-color .2s}
+.sc:hover{border-color:var(--b2)}
+.si{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#181410,#201C12);border:1px solid #2A2014;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.scat{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--g);margin-bottom:4px}
+.sname{font-size:14px;color:var(--t);font-weight:500;margin-bottom:4px}
+.sdate{font-size:11px;color:var(--m)}
+.sr{text-align:right}
+.sprice{font-family:'Cormorant Garamond',serif;font-size:21px;color:var(--t)}
+.badge{display:inline-block;margin-top:5px;padding:2px 10px;border-radius:20px;font-size:8px;letter-spacing:2px;font-weight:600;font-family:'DM Mono',monospace}
+.bup{background:#0F1A0A;color:#7CB342;border:1px solid #1C3010}
+.bdone{background:#1A1408;color:var(--g);border:1px solid #2A2010}
+.tb{margin-top:16px;background:linear-gradient(135deg,#100E06,#161208);border:1px solid #C4954A1E;border-radius:var(--r);padding:20px 26px;display:flex;justify-content:space-between;align-items:center}
+.tbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--m)}
+.tbr{font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--g)}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cp{background:var(--c);border:1px solid var(--b);border-radius:var(--r);overflow:hidden}
+.ch{padding:14px 22px;border-bottom:1px solid var(--b)}
+.cl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--g)}
+.pr{padding:14px 22px;border-bottom:1px solid var(--b)}
+.pr:last-child{border-bottom:none}
+.pbr{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:3px;color:#3A3A3A;margin-bottom:3px}
+.pname{font-size:12px;color:var(--t);font-weight:500;margin-bottom:2px}
+.pdesc{font-size:10px;color:var(--m);line-height:1.5}
+.ir{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.ic{background:var(--c);border:1px solid var(--b);border-radius:var(--r);padding:26px 30px}
+.il{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--m);margin-bottom:8px}
+.iv{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:300}
+.ig{background:linear-gradient(135deg,#140E06,#1C1408);border:1px solid var(--g);border-radius:var(--r);padding:34px 38px;display:flex;justify-content:space-between;align-items:center}
+.igl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:5px;color:var(--g)}
+.igv{font-family:'Cormorant Garamond',serif;font-size:50px;font-weight:300;color:var(--g)}
+.mc{margin-top:14px;background:#161616;border:1px solid var(--b);border-radius:var(--r);padding:26px 30px;display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+.mct h3{font-size:14px;font-weight:500;margin-bottom:5px}
+.mct p{font-size:11px;color:var(--m);line-height:1.7}
+.nb{background:var(--c);border:1px solid var(--b);border-left:3px solid var(--g);border-radius:var(--r);padding:30px 34px}
+.cta{padding:72px 64px;text-align:center}
+.ce{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:6px;color:var(--g);margin-bottom:18px}
+.ct{font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:300;margin-bottom:12px}
+.cs{font-size:12px;color:var(--m);margin-bottom:34px}
+.book{display:inline-block;padding:16px 44px;background:var(--g);border:none;border-radius:40px;color:#000;font-size:10px;font-weight:700;letter-spacing:4px;cursor:pointer;text-decoration:none;font-family:'DM Sans',sans-serif;transition:opacity .2s}
+.book:hover{opacity:.84}
+footer{padding:36px 64px;border-top:1px solid var(--b);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
+.fl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:5px;color:var(--g)}
+.ft{font-size:10px;color:#2A2A2A}
+@keyframes fu{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+@keyframes sk{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@media(max-width:680px){header,.sec,.cta,footer{padding:14px 18px}.hero{padding:56px 18px 44px}.cg,.ir{grid-template-columns:1fr}.ig{flex-direction:column;text-align:center;gap:8px}.sc{grid-template-columns:44px 1fr;gap:14px}.sr{grid-column:2}.div{margin:0 18px}}
+</style>
+</head>
+<body>
+<div id="gate">
+  <div class="gw">
+    <div class="gl">TREASURY AESTHETICS</div>
+    <div class="gr"></div>
+    <h1 class="gt">Your Treasury<br><em>Journey Awaits</em></h1>
+    <p class="gs">This plan has been personally curated for you<br>by Dr. Jason Latsky.</p>
+    <input id="dob" class="gi" type="text" inputmode="numeric" maxlength="8" placeholder="MM  DD  YYYY" autocomplete="off">
+    <button class="gb" onclick="unlock()">ACCESS MY PLAN</button>
+    <div id="gerr" class="ge">Incorrect date — please try again.</div>
+    <div class="gh">Enter your date of birth to unlock</div>
+  </div>
+</div>
+
+<div id="main">
+  <header>
+    <div class="hl">TREASURY AESTHETICS</div>
+    <div class="hn">${esc(name.toUpperCase())} — PERSONAL PLAN</div>
+    <a href="mailto:aesthetics@treasuryhealth.ca?subject=Booking Request" class="hb">BOOK NOW</a>
+  </header>
+
+  <div class="hero">
+    <div class="eye">YOUR TREASURY PLAN</div>
+    <h1>Welcome back,<br><em>${firstName}</em></h1>
+    <p class="sub">${concern?`Your journey is focused on <strong style="color:var(--t)">${concern}</strong>. `:''}Every session and product in this plan has been chosen specifically for you.</p>
+    <div class="pills">
+      <div><div class="pl">PLAN START</div><div class="pv">${start}</div></div>
+      <div><div class="pl">TOTAL SESSIONS</div><div class="pv">${sess.length}</div></div>
+      <div><div class="pl">PHYSICIAN</div><div class="pv">Dr. Jason Latsky</div></div>
+      <div><div class="pl">TOTAL INVESTMENT</div><div class="pv">${cad(gr)} CAD</div></div>
+    </div>
+  </div>
+
+  <div class="div"></div>
+
+  <div class="sec">
+    <div class="sh"><span class="sn">01</span><h2>Your Treatment Journey</h2></div>
+    <div class="sl" id="sl"></div>
+    <div class="tb"><span class="tbl">TREATMENT INVESTMENT</span><span class="tbr">${cad(tx)}</span></div>
+  </div>
+
+  <div class="div"></div>
+
+  <div class="sec">
+    <div class="sh"><span class="sn">02</span><h2>Your Home Care Protocol</h2></div>
+    <div class="cg" id="cg"></div>
+  </div>
+
+  <div class="div"></div>
+
+  <div class="sec">
+    <div class="sh"><span class="sn">03</span><h2>Your Investment Summary</h2></div>
+    <div class="ir">
+      <div class="ic"><div class="il">TREATMENTS</div><div class="iv">${cad(tx)}</div></div>
+      <div class="ic"><div class="il">HOME CARE</div><div class="iv">${cad(pd)}</div></div>
+    </div>
+    <div class="ig">
+      <div class="igl">TOTAL INVESTMENT</div>
+      <div class="igv">${cad(gr)} CAD</div>
+    </div>
+    <div class="mc">
+      <div class="mct">
+        <h3>Maximize your plan with a Treasury Membership</h3>
+        <p>Treasury Reserve members receive 15% off treatments and skincare, plus monthly credit banking. Ask Dr. Latsky at your next visit.</p>
+      </div>
+      <a href="mailto:aesthetics@treasuryhealth.ca?subject=Membership Inquiry" class="book" style="padding:12px 24px;font-size:9px">LEARN MORE</a>
+    </div>
+  </div>
+
+  ${notes?`<div class="div"></div>
+  <div class="sec">
+    <div class="sh"><span class="sn">04</span><h2>A Note From Dr. Latsky</h2></div>
+    <div class="nb">
+      <p style="font-size:14px;color:var(--m);line-height:2">${notes}</p>
+      <p style="margin-top:18px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:#333">— Dr. Jason Latsky, MD · Treasury Aesthetics · Toronto</p>
+    </div>
+  </div>`:''}
+
+  <div class="div"></div>
+
+  <div class="cta">
+    <div class="ce">READY FOR YOUR NEXT SESSION?</div>
+    <h2 class="ct">Reserve Your Next Visit</h2>
+    <p class="cs">Contact us at aesthetics@treasuryhealth.ca or book online.</p>
+    <a href="mailto:aesthetics@treasuryhealth.ca?subject=Booking Request — ${esc(name)}" class="book">BOOK NOW</a>
+  </div>
+
+  <footer>
+    <div class="fl">TREASURY AESTHETICS</div>
+    <div class="ft">Toronto, Ontario · treasuryaesthetics.ca · Confidential — ${esc(name)} only</div>
+  </footer>
+</div>
+
+<script>
+var PW='${password}',SL='${sl}';
+var SESS=${sessJ};
+var PRODS=${prodJ};
+
+function unlock(){
+  var v=document.getElementById('dob').value.replace(/\s/g,'');
+  if(v===PW){
+    document.getElementById('gate').style.display='none';
+    document.getElementById('main').style.display='block';
+    try{sessionStorage.setItem('ta_'+SL,'1')}catch(e){}
+    init();
+  } else {
+    var e=document.getElementById('gerr');e.style.display='block';
+    document.getElementById('dob').style.borderColor='#E57373';
+    setTimeout(function(){document.getElementById('dob').style.borderColor=''},1600);
+  }
+}
+document.getElementById('dob').addEventListener('keydown',function(e){if(e.key==='Enter')unlock()});
+try{if(sessionStorage.getItem('ta_'+SL)==='1'){document.getElementById('gate').style.display='none';document.getElementById('main').style.display='block';init()}}catch(e){}
+
+function fd(s){return s?new Date(s+'T12:00:00').toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'}):'TBD'}
+function fc(n){return'$'+Number(n).toLocaleString('en-CA',{minimumFractionDigits:0,maximumFractionDigits:0})}
+
+function init(){
+  var sl=document.getElementById('sl');
+  if(sl)sl.innerHTML=SESS.length?SESS.map(function(s){
+    var now=new Date();now.setHours(0,0,0,0);
+    var past=s.date&&new Date(s.date+'T12:00:00')<now;
+    var badge=past?'<span class="badge bdone">COMPLETED</span>':'<span class="badge bup">UPCOMING</span>';
+    return'<div class="sc"><div class="si">'+(s.icon||'\u2728')+'</div><div><div class="scat">'+s.cat+'</div><div class="sname">'+s.name+'</div><div class="sdate">Session '+s.si+' of '+s.qty+' \u00B7 '+fd(s.date)+'</div></div><div class="sr"><div class="sprice">'+fc(s.price)+'</div>'+badge+'</div></div>';
+  }).join(''):'<p style="color:#333;padding:20px 0">No treatments added to this plan.</p>';
+
+  var cg=document.getElementById('cg');
+  if(!cg)return;
+  if(!PRODS.length){cg.innerHTML='<p style="color:#333">No home care products prescribed.</p>';return}
+  function row(p){return'<div class="pr"><div class="pbr">'+p.brand.toUpperCase()+'</div><div class="pname">'+p.name+(p.qty>1?' \u00D7'+p.qty:'')+'</div><div class="pdesc">'+p.desc+'</div></div>'}
+  var am=PRODS.filter(function(p){return p.routine==='AM'||p.routine==='AM/PM'});
+  var pm=PRODS.filter(function(p){return p.routine==='PM'||p.routine==='AM/PM'});
+  var ot=PRODS.filter(function(p){return p.routine!=='AM'&&p.routine!=='PM'&&p.routine!=='AM/PM'});
+  var h='';
+  if(am.length||pm.length){
+    h+='<div class="cp"><div class="ch"><div class="cl">\u2600\uFE0F MORNING ROUTINE</div></div>'+(am.length?am.map(row).join(''):'<div class="pr" style="color:#333;font-size:11px">No AM products</div>')+'</div>';
+    h+='<div class="cp"><div class="ch"><div class="cl">\uD83C\uDF19 EVENING ROUTINE</div></div>'+(pm.length?pm.map(row).join(''):'<div class="pr" style="color:#333;font-size:11px">No PM products</div>')+'</div>';
+  }
+  if(ot.length)h+='<div class="cp" style="grid-column:1/-1"><div class="ch"><div class="cl">\uD83D\uDCE6 KITS & PROGRAMS</div></div>'+ot.map(row).join('')+'</div>';
+  cg.innerHTML=h;
+}
+<\/script>
+</body>
+</html>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// GITHUB PUBLISH
+// ══════════════════════════════════════════════════════════════
+
+async function publishToGH() {
+  if (!canPub() || !ghReady()) return;
+  S.publishing=true; S.pubStatus={type:'loading',msg:'Connecting to GitHub…'}; render();
+  try {
+    const html = buildHTML();
+    const bytes = new TextEncoder().encode(html);
+    const bin   = Array.from(bytes, b=>String.fromCodePoint(b)).join('');
+    const b64   = btoa(bin);
+    const sl    = slug();
+    const fname = sl+'.html';
+    const api   = `https://api.github.com/repos/${S.ghUser}/${S.ghRepo}/contents/${fname}`;
+    const hdrs  = {'Authorization':'Bearer '+S.ghToken,'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'};
+
+    S.pubStatus={type:'loading',msg:'Checking repository…'}; render();
+    let sha;
+    try { const r=await fetch(api,{headers:hdrs}); if(r.ok) sha=(await r.json()).sha; } catch(e){}
+
+    S.pubStatus={type:'loading',msg:sha?'Updating patient page…':'Publishing patient page…'}; render();
+    const res = await fetch(api, {
+      method:'PUT', headers:hdrs,
+      body: JSON.stringify({
+        message:(sha?'Update':'Add')+' patient page: '+S.pt.firstName+' '+S.pt.lastName,
+        content:b64, ...(sha?{sha}:{})
+      })
+    });
+    if (!res.ok) { const e=await res.json().catch(()=>({})); throw new Error(e.message||'HTTP '+res.status); }
+
+    const url = S.ghDomain
+      ? 'https://'+S.ghDomain+'/'+sl
+      : 'https://'+S.ghUser+'.github.io/'+S.ghRepo+'/'+sl;
+    S.pubStatus = {type:'ok', msg:'Published!', url};
+  } catch(e) {
+    S.pubStatus = {type:'err', msg:String(e.message||'Upload failed')};
+  }
+  S.publishing=false; render();
+}
+
+function downloadHTML() {
+  if (!canPub()) return;
+  const html = buildHTML();
+  const blob = new Blob([html],{type:'text/html;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download=(slug()||'patient')+'.html'; a.click();
+  URL.revokeObjectURL(url);
+  S.downloaded=true; render();
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════════════
+
+function render() {
+  updateTopbar();
+  updateTabMeta();
+  renderContent();
+  attachListeners();
+}
+
+function updateTopbar() {
+  const sl = slug(), p = pw();
+  document.getElementById('tb-info').innerHTML = sl
+    ? `<span b="">${S.ghDomain||S.ghUser+'.github.io/'+S.ghRepo}</span>/<b>${sl}</b><br>Password: <b>${p||'—'}</b>`
+    : '—';
+}
+
+function updateTabMeta() {
+  const sess = sessions();
+  const tot  = grand();
+  const el1  = document.getElementById('tab-sessions');
+  const el2  = document.getElementById('tab-total');
+  if (el1) el1.textContent = sess.length ? sess.length+' sessions' : '';
+  if (el2) el2.textContent = cad(tot);
+}
+
+function renderContent() {
+  const c = document.getElementById('content');
+  switch(S.tab) {
+    case 0: c.innerHTML = tabPatient(); break;
+    case 1: c.innerHTML = tabTreatments(); break;
+    case 2: c.innerHTML = tabHomeCare(); break;
+    case 3: c.innerHTML = tabPublish(); break;
+  }
+}
+
+// ── TAB 0: PATIENT ────────────────────────────────────────────
+function tabPatient() {
+  const p = S.pt, sl = slug(), pw_ = pw();
+  return `
+  <div class="g2">
+    <div>
+      <label class="lbl">FIRST NAME</label>
+      <input class="inp" id="fn" value="${esc(p.firstName)}" placeholder="Jason">
+    </div>
+    <div>
+      <label class="lbl">LAST NAME</label>
+      <input class="inp" id="ln" value="${esc(p.lastName)}" placeholder="Latsky">
+    </div>
+    <div>
+      <label class="lbl">DATE OF BIRTH</label>
+      <input class="inp" id="dob" type="date" value="${esc(p.dob)}">
+      ${pw_ ? `<div style="font-family:'DM Mono',monospace;font-size:9px;color:#3A3A3A;margin-top:6px">Patient password → <b style="color:var(--gold);letter-spacing:3px">${pw_}</b></div>` : ''}
+    </div>
+    <div>
+      <label class="lbl">PLAN START DATE</label>
+      <input class="inp" id="sd" type="date" value="${esc(p.startDate)}">
+      <div style="font-size:10px;color:#333;margin-top:5px">Session dates project from this date</div>
+    </div>
+    <div class="s2">
+      <label class="lbl">PRIMARY CONCERN</label>
+      <input class="inp" id="concern" value="${esc(p.concern)}" placeholder="e.g. Skin laxity, acne scarring, pigmentation, prejuvenation…">
+    </div>
+    <div class="s2">
+      <label class="lbl">PHYSICIAN NOTES (visible on patient's page)</label>
+      <textarea class="inp" id="notes" placeholder="Personal message or clinical context for the patient…">${esc(p.notes)}</textarea>
+    </div>
+    ${sl ? `
+    <div class="s2" style="background:var(--card);border:1px solid #C4954A1A;border-radius:10px;padding:16px 20px">
+      <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--gold);margin-bottom:12px">GENERATED PAGE INFO</div>
+      <div class="g3">
+        <div><div class="sum-k">URL</div><div class="sum-v" style="font-family:'DM Mono',monospace;font-size:11px">${S.ghDomain?S.ghDomain:'[domain]'}/${sl}</div></div>
+        <div><div class="sum-k">PASSWORD</div><div class="sum-v" style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px">${pw_||'—'}</div></div>
+        <div><div class="sum-k">FILENAME</div><div class="sum-v" style="font-family:'DM Mono',monospace;font-size:11px">${sl}.html</div></div>
+      </div>
+    </div>` : ''}
+  </div>`;
+}
+
+// ── TAB 1: TREATMENTS ─────────────────────────────────────────
+function tabTreatments() {
+  const q = S.txQ.toLowerCase();
+  const txT = txTotal(), sess = sessions();
+
+  let html = `<input class="inp" id="tx-search" value="${esc(S.txQ)}" placeholder="🔍  Search treatments, devices…" style="margin-bottom:20px">`;
+
+  if (S.plan.length) {
+    html += `<div class="sec-hdr">IN THIS PLAN</div>`;
+    html += S.plan.map(item => {
+      const dates = Array.from({length:item.qty},(_,i)=>fmtDate(addWks(S.pt.startDate,i*(item.wk||4))));
+      return `<div class="plan-row">
+        <div class="p-icon">${item.icon}</div>
+        <div class="p-info">
+          <div class="p-cat">${item.cat.toUpperCase()}</div>
+          <div class="p-name">${item.name}</div>
+          ${S.pt.startDate?`<div class="p-dates">${dates.join(' → ')}</div>`:''}
+        </div>
+        <div class="p-ctrl">
+          <button class="btn-ghost" data-action="adj-tx" data-id="${item.id}" data-d="-1">−</button>
+          <span class="qty">${item.qty}</span>
+          <button class="btn-ghost" data-action="adj-tx" data-id="${item.id}" data-d="1">+</button>
+          <span class="p-price">${cad(item.price*item.qty)}</span>
+          <button class="btn-ghost red" data-action="rm-tx" data-id="${item.id}">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+    html += `<div class="tally"><span class="t-lbl">TREATMENT TOTAL · ${sess.length} SESSIONS</span><span class="t-val">${cad(txT)}</span></div>`;
+    html += `<div style="height:24px"></div>`;
+  }
+
+  // Group by category
+  const cats = {};
+  TX.forEach(t => {
+    if (q && !t.name.toLowerCase().includes(q) && !t.cat.toLowerCase().includes(q)) return;
+    if (!cats[t.cat]) cats[t.cat]=[];
+    cats[t.cat].push(t);
+  });
+
+  html += `<div class="sec-hdr">ALL TREATMENTS</div>`;
+  Object.entries(cats).forEach(([cat, txs]) => {
+    html += `<div class="cat-hdr">${cat.toUpperCase()}</div>`;
+    html += txs.map(tx => {
+      const inPlan = S.plan.find(p=>p.id===tx.id);
+      return `<div class="cat-row">
+        <div class="c-icon">${tx.icon}</div>
+        <div class="c-info">
+          <div class="c-name">${tx.name}</div>
+          ${tx.wk?`<div class="c-detail">${tx.wk}wk interval</div>`:''}
+        </div>
+        <div class="c-right">
+          <span class="c-price">${cad(tx.price)}</span>
+          <button class="btn-g" data-action="add-tx" data-id="${tx.id}" ${inPlan?'style="background:#1E1600;color:var(--gold);border:1px solid var(--gold)"':''}>${inPlan?'+1 ('+inPlan.qty+')':'ADD'}</button>
+        </div>
+      </div>`;
+    }).join('');
+  });
+
+  return html;
+}
+
+// ── TAB 2: HOME CARE ──────────────────────────────────────────
+function tabHomeCare() {
+  const q = S.pdQ.toLowerCase();
+  const pdT = pdTotal();
+
+  let html = `<div class="search-bar">
+    <input class="inp" id="pd-search" value="${esc(S.pdQ)}" placeholder="🔍  Search products…" style="flex:1">
+    ${['All','Noon','Epicutis'].map(b=>`<button class="btn-ghost${S.brandF===b?' on':''}" data-action="brand" data-brand="${b}">${b}</button>`).join('')}
+  </div>`;
+
+  if (S.prods.length) {
+    html += `<div class="sec-hdr">PRESCRIBED PRODUCTS</div>`;
+    html += S.prods.map(item => `<div class="plan-row">
+      <div class="p-info">
+        <div class="p-cat">${item.brand.toUpperCase()}</div>
+        <div class="p-name">${item.name}</div>
+      </div>
+      <div class="p-ctrl">
+        <select class="inp" data-action="routine" data-id="${item.id}" style="width:auto;padding:6px 28px 6px 10px;font-size:10px">
+          ${['AM','PM','AM/PM','As needed','Pre-tx','Post-tx'].map(r=>`<option${item.routine===r?' selected':''}>${r}</option>`).join('')}
+        </select>
+        <button class="btn-ghost" data-action="adj-pr" data-id="${item.id}" data-d="-1">−</button>
+        <span class="qty">${item.qty}</span>
+        <button class="btn-ghost" data-action="adj-pr" data-id="${item.id}" data-d="1">+</button>
+        <span class="p-price">${cad(item.price*item.qty)}</span>
+        <button class="btn-ghost red" data-action="rm-pr" data-id="${item.id}">✕</button>
+      </div>
+    </div>`).join('');
+    html += `<div class="tally"><span class="t-lbl">PRODUCTS TOTAL</span><span class="t-val">${cad(pdT)}</span></div>`;
+    html += `<div style="height:24px"></div>`;
+  }
+
+  html += `<div class="sec-hdr">PRODUCT CATALOG</div>`;
+  PR.forEach(prod => {
+    if (S.brandF !== 'All' && prod.brand !== S.brandF) return;
+    if (q && !prod.name.toLowerCase().includes(q) && !prod.desc.toLowerCase().includes(q)) return;
+    const inList = S.prods.find(p=>p.id===prod.id);
+    html += `<div class="cat-row">
+      <div class="c-info">
+        <div class="c-sub">${prod.brand.toUpperCase()} · ${prod.time}</div>
+        <div class="c-name">${prod.name}</div>
+        <div class="c-detail">${prod.desc}</div>
+      </div>
+      <div class="c-right">
+        <span class="c-price">${cad(prod.price)}</span>
+        <button class="btn-g" data-action="add-pr" data-id="${prod.id}" ${inList?'style="background:#1E1600;color:var(--gold);border:1px solid var(--gold)"':''}>${inList?'+1 ('+inList.qty+')':'ADD'}</button>
+      </div>
+    </div>`;
+  });
+  return html;
+}
+
+// ── TAB 3: PUBLISH ────────────────────────────────────────────
+function tabPublish() {
+  const sl=slug(), p=pw(), tx=txTotal(), pd=pdTotal(), gr=grand();
+  const sess=sessions();
+  const ready = canPub() && ghReady();
+
+  const statusHTML = S.pubStatus && !S.publishing ? (
+    S.pubStatus.type==='ok'
+      ? `<div class="alert ok">✓ Published!<br><a class="pub-url" href="${S.pubStatus.url}" target="_blank">${S.pubStatus.url}</a><br><span style="color:#333;font-size:10px;display:block;margin-top:3px">GitHub Pages may take ~60s to go live on first publish.</span></div>`
+      : `<div class="alert err">⚠ ${esc(S.pubStatus.msg)}</div>`
+  ) : '';
+
+  return `<div class="gen">
+
+    <!-- Summary -->
+    <div class="summary-box">
+      <div class="sec-hdr" style="margin-bottom:16px">PLAN SUMMARY</div>
+      <div class="sum-grid">
+        ${[['Patient',`${S.pt.firstName} ${S.pt.lastName}`.trim()||'—'],['URL slug',sl?'/'+sl:'—'],['Password',p||'—'],['Start',S.pt.startDate?fmtDate(S.pt.startDate):'—'],['Sessions',String(sess.length)],['Products',String(S.prods.length)],['Tx Total',cad(tx)],['Products',cad(pd)]].map(([k,v])=>`<div><div class="sum-k">${k.toUpperCase()}</div><div class="sum-v">${v}</div></div>`).join('')}
+      </div>
+      <div class="sum-total">
+        <span class="sum-total-lbl">GRAND TOTAL</span>
+        <span class="sum-total-val">${cad(gr)}</span>
+      </div>
+    </div>
+
+    ${!S.pt.firstName?'<div class="alert err">⚠ Patient first name required</div>':''}
+    ${!S.pt.dob?'<div class="alert err">⚠ Date of birth required — used as patient password</div>':''}
+
+    <!-- GitHub Config -->
+    <div class="gh-box${S.ghUser&&S.ghRepo&&S.ghToken?' ready':''}">
+      <div class="gh-hdr">
+        <span class="gh-title">GITHUB PAGES · ONE-CLICK PUBLISH</span>
+        ${S.ghUser&&S.ghRepo&&S.ghToken?'<span class="gh-dot">● Connected</span>':''}
+      </div>
+      <div class="g2" style="gap:12px;margin-bottom:12px">
+        <div>
+          <label class="lbl">GITHUB USERNAME</label>
+          <input class="inp" id="gh-user" value="${esc(S.ghUser)}" placeholder="drlatsky-aesthetics">
+        </div>
+        <div>
+          <label class="lbl">REPOSITORY NAME</label>
+          <input class="inp" id="gh-repo" value="${esc(S.ghRepo)}" placeholder="patient-pages">
+        </div>
+        <div class="s2">
+          <label class="lbl">PERSONAL ACCESS TOKEN  (repo scope)</label>
+          <input class="inp" id="gh-token" type="password" value="${esc(S.ghToken)}" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="${S.ghToken?'letter-spacing:3px':''}">
+        </div>
+        <div class="s2">
+          <label class="lbl">CUSTOM DOMAIN  (optional)</label>
+          <input class="inp" id="gh-domain" value="${esc(S.ghDomain)}" placeholder="plans.treasuryaesthetics.ca">
+          <div style="font-size:10px;color:#333;margin-top:5px">Leave blank to use ${S.ghUser||'username'}.github.io/${S.ghRepo||'repo'}</div>
+        </div>
+      </div>
+      <div style="margin-bottom:18px">
+        <button class="btn-ghost${S.cfgSaved?' green':''}" data-action="save-cfg" style="font-size:10px">${S.cfgSaved?'✓ SAVED':'SAVE CONFIG'}</button>
+        <span style="font-size:10px;color:#2A2A2A;margin-left:10px">Credentials saved to browser localStorage</span>
+      </div>
+
+      ${statusHTML}
+
+      <button class="btn-wide${ready&&!S.publishing?' ready':' off'}" data-action="publish" ${!ready||S.publishing?'disabled':''}>
+        ${S.publishing?'⏳  '+(S.pubStatus?.msg||'Publishing…'):`PUBLISH  ${sl?sl+'.html':'PATIENT PAGE'}  →  GITHUB`}
+      </button>
+    </div>
+
+    <!-- Download fallback -->
+    <div style="background:#080808;border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:14px">
+      <div class="sec-hdr" style="margin-bottom:10px">OR DOWNLOAD FILE</div>
+      <button class="btn-wide${canPub()?' ready':' off'}" data-action="download" style="padding:13px">${S.downloaded?'✓ DOWNLOADED — upload via cPanel or FTP':'DOWNLOAD  '+(sl?sl+'.html':'PATIENT PAGE')}</button>
+    </div>
+
+    <!-- Setup steps -->
+    <div class="steps-box">
+      <div class="steps-title">ONE-TIME GITHUB SETUP</div>
+      ${[
+        ['Create a free GitHub account','github.com/signup — then create a new repository. Suggested name: <span class="step-code">patient-pages</span>'],
+        ['Enable GitHub Pages','Repo → Settings → Pages → Source: Deploy from branch (main, / root) → Save'],
+        ['Set your custom domain','In Pages settings enter <span class="step-code">plans.treasuryaesthetics.ca</span> — then add a CNAME DNS record at your registrar: <span class="step-code">plans → drlatsky-aesthetics.github.io</span>'],
+        ['Generate a Personal Access Token','GitHub → Settings → Developer Settings → Personal Access Tokens (classic) → New token → tick <span class="step-code">repo</span> → copy the token'],
+        ['Paste config above and Save','From this point, every patient page publishes in one click.'],
+      ].map(([t,d],i)=>`<div class="step"><div class="step-n">${i+1}</div><div><div class="step-title">${t}</div><div class="step-detail">${d}</div></div></div>`).join('')}
+      <div class="alert info" style="margin-top:14px;font-size:10px">🔒 PAT is stored in your browser's localStorage only — never transmitted anywhere except the GitHub API. Birthday password is client-side only; avoid including clinical diagnoses or medications in the notes field.</div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// EVENT DELEGATION
+// ══════════════════════════════════════════════════════════════
+
+function attachListeners() {
+  // Tab buttons
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.onclick = () => {
+      S.tab = parseInt(btn.dataset.tab);
+      document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on', b===btn));
+      render();
+    };
+  });
+
+  // Content actions
+  document.getElementById('content').addEventListener('click', handleClick);
+  document.getElementById('content').addEventListener('change', handleChange);
+  document.getElementById('content').addEventListener('input', handleInput);
+}
+
+function handleClick(e) {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const {action, id, d, brand} = el.dataset;
+  switch(action) {
+    case 'add-tx':  addTx(id); break;
+    case 'rm-tx':   removeTx(id); break;
+    case 'adj-tx':  adjTxQty(id, parseInt(d)); break;
+    case 'add-pr':  addPr(id); break;
+    case 'rm-pr':   removePr(id); break;
+    case 'adj-pr':  adjPrQty(id, parseInt(d)); break;
+    case 'brand':   S.brandF=brand; render(); break;
+    case 'save-cfg': readGhInputs(); saveConfig(); break;
+    case 'publish':  readGhInputs(); publishToGH(); break;
+    case 'download': downloadHTML(); break;
+  }
+}
+
+function handleChange(e) {
+  const el = e.target;
+  if (el.dataset.action==='routine') { setPrRoutine(el.dataset.id, el.value); return; }
+}
+
+function handleInput(e) {
+  const el = e.target;
+  const v = el.value;
+  const id = el.id;
+  const ptMap = {fn:'firstName',ln:'lastName',dob:'dob',sd:'startDate',concern:'concern',notes:'notes'};
+  const ghMap = {'gh-user':'ghUser','gh-repo':'ghRepo','gh-token':'ghToken','gh-domain':'ghDomain'};
+  if (ptMap[id]) { S.pt[ptMap[id]]=v; updateTopbar(); updateTabMeta(); }
+  else if (ghMap[id]) { S[ghMap[id]]=v; updateTopbar(); }
+  else if (id==='tx-search') { S.txQ=v; renderContent(); attachListeners(); }
+  else if (id==='pd-search') { S.pdQ=v; renderContent(); attachListeners(); }
+}
+
+function readGhInputs() {
+  ['gh-user','gh-repo','gh-token','gh-domain'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const map = {'gh-user':'ghUser','gh-repo':'ghRepo','gh-token':'ghToken','gh-domain':'ghDomain'};
+      S[map[id]] = el.value;
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+
+loadConfig();
+render();
+</script>
+</body>
+</html>
