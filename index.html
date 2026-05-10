@@ -269,6 +269,12 @@ let S = {
   plan: [],    // [{...tx, qty}]
   prods: [],   // [{...pr, qty, routine}]
   txQ: '', pdQ: '', brandF: 'All',
+  // Discounts
+  discounts: [], // [{id, label, type:'pct'|'flat', value}]
+  // Home care custom text
+  amNotes: '', pmNotes: '',
+  // Custom note sections
+  customNotes: [], // [{id, title, body}]
   ghUser: 'drlatsky-aesthetics', ghRepo: '', ghToken: '', ghDomain: '',
   cfgSaved: false,
   publishing: false,
@@ -316,6 +322,14 @@ const sessions = () => {
 const txTotal  = () => S.plan.reduce((s,i)=>s+i.price*i.qty, 0);
 const pdTotal  = () => S.prods.reduce((s,i)=>s+i.price*i.qty, 0);
 const grand    = () => txTotal()+pdTotal();
+const discountTotal = () => {
+  const g = grand();
+  return S.discounts.reduce((s,d) => {
+    const v = parseFloat(d.value)||0;
+    return s + (d.type==='pct' ? Math.round(g*(v/100)) : v);
+  }, 0);
+};
+const grandFinal = () => Math.max(0, grand() - discountTotal());
 const canPub   = () => !!S.pt.firstName && !!S.pt.dob;
 const ghReady  = () => !!S.ghUser && !!S.ghRepo && !!S.ghToken;
 
@@ -364,6 +378,22 @@ function removePr(id)       { S.prods=S.prods.filter(x=>x.id!==id); render(); }
 function adjPrQty(id,d)     { S.prods=S.prods.map(x=>x.id===id?{...x,qty:Math.max(1,x.qty+d)}:x); render(); }
 function setPrRoutine(id,v) { S.prods=S.prods.map(x=>x.id===id?{...x,routine:v}:x); render(); }
 
+// Discounts
+function addDiscount() {
+  S.discounts=[...S.discounts,{id:Date.now().toString(36),label:'',type:'pct',value:''}];
+  render();
+}
+function removeDiscount(id) { S.discounts=S.discounts.filter(d=>d.id!==id); render(); }
+function updateDiscount(id,key,val) { S.discounts=S.discounts.map(d=>d.id===id?{...d,[key]:val}:d); render(); }
+
+// Custom notes
+function addCustomNote() {
+  S.customNotes=[...S.customNotes,{id:Date.now().toString(36),title:'',body:''}];
+  render();
+}
+function removeCustomNote(id) { S.customNotes=S.customNotes.filter(n=>n.id!==id); render(); }
+function updateCustomNote(id,key,val) { S.customNotes=S.customNotes.map(n=>n.id===id?{...n,[key]:val}:n); }
+
 // ══════════════════════════════════════════════════════════════
 // BUILD PATIENT HTML
 // ══════════════════════════════════════════════════════════════
@@ -378,10 +408,55 @@ function buildHTML() {
   const sl        = slug();
   const password  = pw();
   const tx = txTotal(), pd = pdTotal(), gr = grand();
+  const disc = discountTotal(), final = grandFinal();
 
   const safeJ = o => JSON.stringify(o).replace(/<\/script>/gi,'<\\/script>');
   const sessJ = safeJ(sess.map(s=>({cat:s.cat,name:s.name,si:s.si,qty:s.qty,date:s.date,price:s.price,icon:s.icon||'✨'})));
   const prodJ = safeJ(S.prods.map(p=>({name:p.name,brand:p.brand,desc:p.desc,price:p.price,routine:p.routine,qty:p.qty})));
+
+  // Investment section with discounts
+  const discountRows = S.discounts.filter(d=>d.label||d.value).map(d => {
+    const v = parseFloat(d.value)||0;
+    const amount = d.type==='pct' ? Math.round(gr*(v/100)) : v;
+    return `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--b);font-size:13px">
+      <span style="color:var(--m)">${esc(d.label||'Discount')}</span>
+      <span style="color:#81C784">− ${cad(amount)}</span>
+    </div>`;
+  }).join('');
+
+  const savingsBlock = disc > 0 ? `
+    <div style="background:var(--c);border:1px solid var(--b);border-radius:var(--r);padding:20px 30px;margin-top:14px">
+      <div style="display:flex;justify-content:space-between;padding:0 0 10px;border-bottom:1px solid var(--b);font-size:13px;color:var(--m)">
+        <span>Subtotal</span><span>${cad(gr)}</span>
+      </div>
+      ${discountRows}
+      <div style="display:flex;justify-content:space-between;padding-top:14px;font-size:16px;font-weight:600">
+        <span style="color:var(--t)">Total After Savings</span>
+        <span style="color:#81C784;font-family:'Cormorant Garamond',serif;font-size:24px">${cad(final)} CAD</span>
+      </div>
+    </div>` : '';
+
+  // AM/PM routine notes
+  const amNotesBlock = S.amNotes.trim()
+    ? `<div style="margin-top:14px;background:var(--c);border:1px solid var(--b);border-left:2px solid var(--g);border-radius:var(--r);padding:18px 22px">
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--g);margin-bottom:10px">MORNING ROUTINE NOTES</div>
+        <div style="font-size:13px;color:var(--m);line-height:2;white-space:pre-line">${esc(S.amNotes)}</div>
+       </div>` : '';
+  const pmNotesBlock = S.pmNotes.trim()
+    ? `<div style="margin-top:14px;background:var(--c);border:1px solid var(--b);border-left:2px solid var(--g);border-radius:var(--r);padding:18px 22px">
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--g);margin-bottom:10px">EVENING ROUTINE NOTES</div>
+        <div style="font-size:13px;color:var(--m);line-height:2;white-space:pre-line">${esc(S.pmNotes)}</div>
+       </div>` : '';
+
+  // Custom notes sections
+  const customNoteSections = S.customNotes
+    .filter(n=>n.title||n.body)
+    .map((n,i) => `
+  <div class="div"></div>
+  <div class="sec">
+    <div class="sh"><span class="sn">0${5+i}</span><h2>${esc(n.title||'Notes')}</h2></div>
+    <div class="nb"><p style="font-size:14px;color:var(--m);line-height:2;white-space:pre-line">${esc(n.body)}</p></div>
+  </div>`).join('');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -507,7 +582,7 @@ footer{padding:36px 64px;border-top:1px solid var(--b);display:flex;justify-cont
       <div><div class="pl">PLAN START</div><div class="pv">${start}</div></div>
       <div><div class="pl">TOTAL SESSIONS</div><div class="pv">${sess.length}</div></div>
       <div><div class="pl">PHYSICIAN</div><div class="pv">Dr. Jason Latsky</div></div>
-      <div><div class="pl">TOTAL INVESTMENT</div><div class="pv">${cad(gr)} CAD</div></div>
+      <div><div class="pl">TOTAL INVESTMENT</div><div class="pv">${cad(final)} CAD${disc>0?` <span style="color:#81C784;font-size:11px">(you save ${cad(disc)})</span>`:''}</div></div>
     </div>
   </div>
 
@@ -524,6 +599,8 @@ footer{padding:36px 64px;border-top:1px solid var(--b);display:flex;justify-cont
   <div class="sec">
     <div class="sh"><span class="sn">02</span><h2>Your Home Care Protocol</h2></div>
     <div class="cg" id="cg"></div>
+    ${amNotesBlock}
+    ${pmNotesBlock}
   </div>
 
   <div class="div"></div>
@@ -536,8 +613,9 @@ footer{padding:36px 64px;border-top:1px solid var(--b);display:flex;justify-cont
     </div>
     <div class="ig">
       <div class="igl">TOTAL INVESTMENT</div>
-      <div class="igv">${cad(gr)} CAD</div>
+      <div class="igv">${cad(final)} CAD</div>
     </div>
+    ${savingsBlock}
     <div class="mc">
       <div class="mct">
         <h3>Maximize your plan with a Treasury Membership</h3>
@@ -555,6 +633,8 @@ footer{padding:36px 64px;border-top:1px solid var(--b);display:flex;justify-cont
       <p style="margin-top:18px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:#333">— Dr. Jason Latsky, MD · Treasury Aesthetics · Toronto</p>
     </div>
   </div>`:''}
+
+  ${customNoteSections}
 
   <div class="div"></div>
 
@@ -744,6 +824,22 @@ function tabPatient() {
       <label class="lbl">PHYSICIAN NOTES (visible on patient's page)</label>
       <textarea class="inp" id="notes" placeholder="Personal message or clinical context for the patient…">${esc(p.notes)}</textarea>
     </div>
+
+    <div class="s2" style="border-top:1px solid var(--border);padding-top:20px;margin-top:4px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <label class="lbl" style="margin:0">CUSTOM NOTE SECTIONS</label>
+        <button class="btn-ghost" data-action="add-note" style="font-size:10px">+ ADD SECTION</button>
+      </div>
+      ${S.customNotes.length===0?`<div style="font-size:11px;color:#2A2A2A;padding:8px 0">Add custom sections that appear on the patient's page — e.g. "Post-Treatment Care", "Things to Avoid", "Your Skin Goals".</div>`:''}
+      ${S.customNotes.map(n=>`
+        <div style="background:var(--card);border:1px solid #C4954A18;border-radius:10px;padding:14px 16px;margin-bottom:10px">
+          <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center">
+            <input class="inp" data-action="note-title" data-id="${n.id}" value="${esc(n.title)}" placeholder="Section title — e.g. Post-Treatment Care" style="flex:1">
+            <button class="btn-ghost red" data-action="rm-note" data-id="${n.id}" style="flex-shrink:0">✕</button>
+          </div>
+          <textarea class="inp" data-action="note-body" data-id="${n.id}" placeholder="Content for this section…" style="min-height:80px">${esc(n.body)}</textarea>
+        </div>`).join('')}
+    </div>
     ${sl ? `
     <div class="s2" style="background:var(--card);border:1px solid #C4954A1A;border-radius:10px;padding:16px 20px">
       <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--gold);margin-bottom:12px">GENERATED PAGE INFO</div>
@@ -849,8 +945,23 @@ function tabHomeCare() {
     html += `<div style="height:24px"></div>`;
   }
 
-  html += `<div class="sec-hdr">PRODUCT CATALOG</div>`;
-  PR.forEach(prod => {
+  // AM/PM custom routine notes
+  html += `
+  <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:20px">
+    <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--gold);margin-bottom:14px">ROUTINE NOTES  <span style="color:#333;font-size:8px">(optional step-by-step instructions shown on patient page)</span></div>
+    <div class="g2" style="gap:12px">
+      <div>
+        <label class="lbl">☀ MORNING ROUTINE NOTES</label>
+        <textarea class="inp" id="am-notes" placeholder="e.g. 1. Cleanse with C-Foaming Cleanser&#10;2. Apply Halo-Ronic Serum&#10;3. Moisturise with Igloo Moist&#10;4. Finish with MultiVit SPF30" style="min-height:120px">${esc(S.amNotes)}</textarea>
+      </div>
+      <div>
+        <label class="lbl">🌙 EVENING ROUTINE NOTES</label>
+        <textarea class="inp" id="pm-notes" placeholder="e.g. 1. Double cleanse with Oil Cleanser&#10;2. Apply DeFlame serum&#10;3. Retinol Charisma 0.3%&#10;4. Seal with HYVIA Crème" style="min-height:120px">${esc(S.pmNotes)}</textarea>
+      </div>
+    </div>
+  </div>`;
+
+  html += `<div class="sec-hdr">PRODUCT CATALOG</div>`;  PR.forEach(prod => {
     if (S.brandF !== 'All' && prod.brand !== S.brandF) return;
     if (q && !prod.name.toLowerCase().includes(q) && !prod.desc.toLowerCase().includes(q)) return;
     const inList = S.prods.find(p=>p.id===prod.id);
@@ -890,15 +1001,44 @@ function tabPublish() {
         ${[['Patient',`${S.pt.firstName} ${S.pt.lastName}`.trim()||'—'],['URL slug',sl?'/'+sl:'—'],['Password',p||'—'],['Start',S.pt.startDate?fmtDate(S.pt.startDate):'—'],['Sessions',String(sess.length)],['Products',String(S.prods.length)],['Tx Total',cad(tx)],['Products',cad(pd)]].map(([k,v])=>`<div><div class="sum-k">${k.toUpperCase()}</div><div class="sum-v">${v}</div></div>`).join('')}
       </div>
       <div class="sum-total">
-        <span class="sum-total-lbl">GRAND TOTAL</span>
-        <span class="sum-total-val">${cad(gr)}</span>
+        <span class="sum-total-lbl">GRAND TOTAL${disc>0?' (AFTER DISCOUNTS)':''}</span>
+        <span class="sum-total-val">${cad(grandFinal())}${disc>0?` <span style="font-size:11px;color:#81C784">saves ${cad(disc)}</span>`:''}</span>
       </div>
     </div>
 
     ${!S.pt.firstName?'<div class="alert err">⚠ Patient first name required</div>':''}
     ${!S.pt.dob?'<div class="alert err">⚠ Date of birth required — used as patient password</div>':''}
 
-    <!-- GitHub Config -->
+    <!-- Discounts -->
+    <div style="background:#0A0A0A;border:1px solid var(--border);border-radius:12px;padding:20px 22px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${S.discounts.length?'16px':'0'}">
+        <span class="gh-title">DISCOUNTS & ADJUSTMENTS</span>
+        <button class="btn-ghost" data-action="add-discount" style="font-size:10px">+ ADD</button>
+      </div>
+      ${S.discounts.map(d=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+          <input class="inp" data-action="disc-label" data-id="${d.id}" value="${esc(d.label)}" placeholder="Label — e.g. Membership Discount" style="flex:1">
+          <button class="btn-ghost${d.type==='pct'?' on':''}" data-action="disc-type" data-id="${d.id}" data-val="pct" style="font-size:11px;padding:8px 12px">%</button>
+          <button class="btn-ghost${d.type==='flat'?' on':''}" data-action="disc-type" data-id="${d.id}" data-val="flat" style="font-size:11px;padding:8px 12px">$</button>
+          <input class="inp" data-action="disc-value" data-id="${d.id}" value="${esc(String(d.value))}" placeholder="${d.type==='pct'?'10':'100'}" type="number" min="0" style="width:80px;text-align:right">
+          <button class="btn-ghost red" data-action="rm-discount" data-id="${d.id}">✕</button>
+        </div>`).join('')}
+      ${S.discounts.length && discountTotal()>0 ? `
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;color:#444">SUBTOTAL</div>
+            <div style="font-size:13px;color:#555;text-decoration:line-through">${cad(grand())}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;color:#81C784">PATIENT SAVES</div>
+            <div style="font-size:13px;color:#81C784">− ${cad(discountTotal())}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--gold)">TOTAL</div>
+            <div style="font-family:'DM Mono',monospace;font-size:18px;color:var(--gold);font-weight:700">${cad(grandFinal())}</div>
+          </div>
+        </div>` : S.discounts.length===0 ? `<div style="font-size:10px;color:#2A2A2A;margin-top:8px">Membership discount, referral credit, promotional offer — discounts appear as a savings breakdown on the patient's page.</div>` : ''}
+    </div>
     <div class="gh-box${S.ghUser&&S.ghRepo&&S.ghToken?' ready':''}">
       <div class="gh-hdr">
         <span class="gh-title">GITHUB PAGES · ONE-CLICK PUBLISH</span>
@@ -988,6 +1128,11 @@ function handleClick(e) {
     case 'rm-pr':   removePr(id); break;
     case 'adj-pr':  adjPrQty(id, parseInt(d)); break;
     case 'brand':   S.brandF=brand; render(); break;
+    case 'add-discount': addDiscount(); break;
+    case 'rm-discount':  removeDiscount(id); break;
+    case 'disc-type':    updateDiscount(id,'type',el.dataset.val); break;
+    case 'add-note':     addCustomNote(); break;
+    case 'rm-note':      removeCustomNote(id); break;
     case 'save-cfg': readGhInputs(); saveConfig(); break;
     case 'publish':  readGhInputs(); publishToGH(); break;
     case 'download': downloadHTML(); break;
@@ -1009,6 +1154,15 @@ function handleInput(e) {
   else if (ghMap[id]) { S[ghMap[id]]=v; updateTopbar(); }
   else if (id==='tx-search') { S.txQ=v; renderContent(); attachListeners(); }
   else if (id==='pd-search') { S.pdQ=v; renderContent(); attachListeners(); }
+  else if (id==='am-notes')  { S.amNotes=v; }
+  else if (id==='pm-notes')  { S.pmNotes=v; }
+  // Discount inputs
+  const da = el.dataset.action;
+  if (da==='disc-label') updateDiscount(el.dataset.id,'label',v);
+  if (da==='disc-value') updateDiscount(el.dataset.id,'value',v);
+  // Custom note inputs (live update, no re-render)
+  if (da==='note-title') updateCustomNote(el.dataset.id,'title',v);
+  if (da==='note-body')  updateCustomNote(el.dataset.id,'body',v);
 }
 
 function readGhInputs() {
