@@ -1176,10 +1176,61 @@ function readGhInputs() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// IMPORT FROM SKINCARE AGENT
+// ══════════════════════════════════════════════════════════════
+
+// Picks up a plan handed off via ?import=<base64 JSON> from the Skincare
+// treatment-advisor agent: {title, treatments:[{name,price,detail}],
+// products:[{name,price,detail,routine}]}. Patient identity (name/DOB) is
+// never part of the payload — staff still enter that here, by design.
+function importFromAgent() {
+  const params = new URLSearchParams(location.search);
+  const encoded = params.get('import');
+  if (!encoded) return;
+
+  try {
+    const payload = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+
+    (payload.treatments || []).forEach((t, i) => {
+      S.plan.push({
+        id: 'agent-tx-' + i,
+        name: t.name || 'Treatment',
+        cat: 'From Treatment Advisor',
+        price: Number(t.price) || 0,
+        qty: 1,
+        wk: 4,
+        icon: '✨',
+        note: t.detail || '',
+      });
+    });
+
+    (payload.products || []).forEach((p, i) => {
+      S.prods.push({
+        id: 'agent-pr-' + i,
+        name: p.name || 'Product',
+        brand: '',
+        desc: p.detail || '',
+        price: Number(p.price) || 0,
+        qty: 1,
+        routine: p.routine || 'OTHER',
+      });
+    });
+
+    if (payload.title) S.pt.concern = S.pt.concern || payload.title;
+  } catch (e) {
+    console.warn('Could not import plan from agent:', e);
+  }
+
+  // Clean the URL so re-publishing/refreshing doesn't re-import
+  history.replaceState(null, '', location.pathname);
+}
+
+// ══════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════
 
 loadConfig();
+importFromAgent();
 render();
 </script>
 </body>
