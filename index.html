@@ -275,7 +275,7 @@ let S = {
   amNotes: '', pmNotes: '',
   // Custom note sections
   customNotes: [], // [{id, title, body}]
-  ghUser: 'drlatsky-aesthetics', ghRepo: '', ghToken: '', ghDomain: '',
+  agentUrl: 'https://plans.treasuryaesthetics.ca', publishToken: '',
   cfgSaved: false,
   publishing: false,
   pubStatus: null,  // {type:'ok'|'err'|'loading', msg, url}
@@ -331,15 +331,15 @@ const discountTotal = () => {
 };
 const grandFinal = () => Math.max(0, grand() - discountTotal());
 const canPub   = () => !!S.pt.firstName && !!S.pt.dob;
-const ghReady  = () => !!S.ghUser && !!S.ghRepo && !!S.ghToken;
+const agentReady = () => !!S.agentUrl && !!S.publishToken;
 
 // ══════════════════════════════════════════════════════════════
 // LOCAL STORAGE
 // ══════════════════════════════════════════════════════════════
 
 function saveConfig() {
-  localStorage.setItem('ta-gh', JSON.stringify({
-    ghUser:S.ghUser, ghRepo:S.ghRepo, ghToken:S.ghToken, ghDomain:S.ghDomain
+  localStorage.setItem('ta-agent', JSON.stringify({
+    agentUrl:S.agentUrl, publishToken:S.publishToken
   }));
   S.cfgSaved = true; render();
   setTimeout(()=>{ S.cfgSaved=false; render(); }, 2500);
@@ -347,11 +347,9 @@ function saveConfig() {
 
 function loadConfig() {
   try {
-    const r = JSON.parse(localStorage.getItem('ta-gh')||'{}');
-    if (r.ghUser)   S.ghUser   = r.ghUser;
-    if (r.ghRepo)   S.ghRepo   = r.ghRepo;
-    if (r.ghToken)  S.ghToken  = r.ghToken;
-    if (r.ghDomain) S.ghDomain = r.ghDomain;
+    const r = JSON.parse(localStorage.getItem('ta-agent')||'{}');
+    if (r.agentUrl)      S.agentUrl      = r.agentUrl;
+    if (r.publishToken)  S.publishToken  = r.publishToken;
   } catch(e) {}
 }
 
@@ -709,36 +707,22 @@ function init(){
 // ══════════════════════════════════════════════════════════════
 
 async function publishToGH() {
-  if (!canPub() || !ghReady()) return;
-  S.publishing=true; S.pubStatus={type:'loading',msg:'Connecting to GitHub…'}; render();
+  if (!canPub() || !agentReady()) return;
+  S.publishing=true; S.pubStatus={type:'loading',msg:'Publishing patient page…'}; render();
   try {
     const html = buildHTML();
-    const bytes = new TextEncoder().encode(html);
-    const bin   = Array.from(bytes, b=>String.fromCodePoint(b)).join('');
-    const b64   = btoa(bin);
-    const sl    = slug();
-    const fname = sl+'.html';
-    const api   = `https://api.github.com/repos/${S.ghUser}/${S.ghRepo}/contents/${fname}`;
-    const hdrs  = {'Authorization':'Bearer '+S.ghToken,'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'};
+    const sl   = slug();
+    const base = S.agentUrl.replace(/\/$/,'');
 
-    S.pubStatus={type:'loading',msg:'Checking repository…'}; render();
-    let sha;
-    try { const r=await fetch(api,{headers:hdrs}); if(r.ok) sha=(await r.json()).sha; } catch(e){}
-
-    S.pubStatus={type:'loading',msg:sha?'Updating patient page…':'Publishing patient page…'}; render();
-    const res = await fetch(api, {
-      method:'PUT', headers:hdrs,
-      body: JSON.stringify({
-        message:(sha?'Update':'Add')+' patient page: '+S.pt.firstName+' '+S.pt.lastName,
-        content:b64, ...(sha?{sha}:{})
-      })
+    const res = await fetch(base+'/api/publish-page', {
+      method:'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+S.publishToken},
+      body: JSON.stringify({ slug: sl, html }),
     });
-    if (!res.ok) { const e=await res.json().catch(()=>({})); throw new Error(e.message||'HTTP '+res.status); }
+    const data = await res.json().catch(()=>({}));
+    if (!res.ok || !data.ok) throw new Error(data.error||'HTTP '+res.status);
 
-    const url = S.ghDomain
-      ? 'https://'+S.ghDomain+'/'+sl
-      : 'https://'+S.ghUser+'.github.io/'+S.ghRepo+'/'+sl;
-    S.pubStatus = {type:'ok', msg:'Published!', url};
+    S.pubStatus = {type:'ok', msg:'Published!', url: data.url || (base+'/'+sl+'.html')};
   } catch(e) {
     S.pubStatus = {type:'err', msg:String(e.message||'Upload failed')};
   }
@@ -770,7 +754,7 @@ function render() {
 function updateTopbar() {
   const sl = slug(), p = pw();
   document.getElementById('tb-info').innerHTML = sl
-    ? `<span b="">${S.ghDomain||S.ghUser+'.github.io/'+S.ghRepo}</span>/<b>${sl}</b><br>Password: <b>${p||'—'}</b>`
+    ? `<span b="">${(S.agentUrl||'').replace(/^https?:\/\//,'')}</span>/<b>${sl}</b><br>Password: <b>${p||'—'}</b>`
     : '—';
 }
 
@@ -844,7 +828,7 @@ function tabPatient() {
     <div class="s2" style="background:var(--card);border:1px solid #C4954A1A;border-radius:10px;padding:16px 20px">
       <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--gold);margin-bottom:12px">GENERATED PAGE INFO</div>
       <div class="g3">
-        <div><div class="sum-k">URL</div><div class="sum-v" style="font-family:'DM Mono',monospace;font-size:11px">${S.ghDomain?S.ghDomain:'[domain]'}/${sl}</div></div>
+        <div><div class="sum-k">URL</div><div class="sum-v" style="font-family:'DM Mono',monospace;font-size:11px">${(S.agentUrl||'[agent url]').replace(/^https?:\/\//,'')}/${sl}</div></div>
         <div><div class="sum-k">PASSWORD</div><div class="sum-v" style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px">${pw_||'—'}</div></div>
         <div><div class="sum-k">FILENAME</div><div class="sum-v" style="font-family:'DM Mono',monospace;font-size:11px">${sl}.html</div></div>
       </div>
@@ -984,7 +968,7 @@ function tabHomeCare() {
 function tabPublish() {
   const sl=slug(), p=pw(), tx=txTotal(), pd=pdTotal(), gr=grand();
   const sess=sessions();
-  const ready = canPub() && ghReady();
+  const ready = canPub() && agentReady();
 
   const statusHTML = S.pubStatus && !S.publishing ? (
     S.pubStatus.type==='ok'
@@ -1039,39 +1023,30 @@ function tabPublish() {
           </div>
         </div>` : S.discounts.length===0 ? `<div style="font-size:10px;color:#2A2A2A;margin-top:8px">Membership discount, referral credit, promotional offer — discounts appear as a savings breakdown on the patient's page.</div>` : ''}
     </div>
-    <div class="gh-box${S.ghUser&&S.ghRepo&&S.ghToken?' ready':''}">
+    <div class="gh-box${S.agentUrl&&S.publishToken?' ready':''}">
       <div class="gh-hdr">
-        <span class="gh-title">GITHUB PAGES · ONE-CLICK PUBLISH</span>
-        ${S.ghUser&&S.ghRepo&&S.ghToken?'<span class="gh-dot">● Connected</span>':''}
+        <span class="gh-title">TREASURY AGENT · ONE-CLICK PUBLISH</span>
+        ${S.agentUrl&&S.publishToken?'<span class="gh-dot">● Connected</span>':''}
       </div>
       <div class="g2" style="gap:12px;margin-bottom:12px">
-        <div>
-          <label class="lbl">GITHUB USERNAME</label>
-          <input class="inp" id="gh-user" value="${esc(S.ghUser)}" placeholder="drlatsky-aesthetics">
-        </div>
-        <div>
-          <label class="lbl">REPOSITORY NAME</label>
-          <input class="inp" id="gh-repo" value="${esc(S.ghRepo)}" placeholder="patient-pages">
+        <div class="s2">
+          <label class="lbl">AGENT URL</label>
+          <input class="inp" id="agent-url" value="${esc(S.agentUrl)}" placeholder="https://plans.treasuryaesthetics.ca">
         </div>
         <div class="s2">
-          <label class="lbl">PERSONAL ACCESS TOKEN  (repo scope)</label>
-          <input class="inp" id="gh-token" type="password" value="${esc(S.ghToken)}" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="${S.ghToken?'letter-spacing:3px':''}">
-        </div>
-        <div class="s2">
-          <label class="lbl">CUSTOM DOMAIN  (optional)</label>
-          <input class="inp" id="gh-domain" value="${esc(S.ghDomain)}" placeholder="plans.treasuryaesthetics.ca">
-          <div style="font-size:10px;color:#333;margin-top:5px">Leave blank to use ${S.ghUser||'username'}.github.io/${S.ghRepo||'repo'}</div>
+          <label class="lbl">PUBLISH TOKEN</label>
+          <input class="inp" id="publish-token" type="password" value="${esc(S.publishToken)}" placeholder="paste the PUBLISH_TOKEN value" style="${S.publishToken?'letter-spacing:3px':''}">
         </div>
       </div>
       <div style="margin-bottom:18px">
         <button class="btn-ghost${S.cfgSaved?' green':''}" data-action="save-cfg" style="font-size:10px">${S.cfgSaved?'✓ SAVED':'SAVE CONFIG'}</button>
-        <span style="font-size:10px;color:#2A2A2A;margin-left:10px">Credentials saved to browser localStorage</span>
+        <span style="font-size:10px;color:#2A2A2A;margin-left:10px">Saved to browser localStorage only</span>
       </div>
 
       ${statusHTML}
 
       <button class="btn-wide${ready&&!S.publishing?' ready':' off'}" data-action="publish" ${!ready||S.publishing?'disabled':''}>
-        ${S.publishing?'⏳  '+(S.pubStatus?.msg||'Publishing…'):`PUBLISH  ${sl?sl+'.html':'PATIENT PAGE'}  →  GITHUB`}
+        ${S.publishing?'⏳  '+(S.pubStatus?.msg||'Publishing…'):`PUBLISH  ${sl?sl+'.html':'PATIENT PAGE'}  →  AGENT`}
       </button>
     </div>
 
@@ -1083,15 +1058,13 @@ function tabPublish() {
 
     <!-- Setup steps -->
     <div class="steps-box">
-      <div class="steps-title">ONE-TIME GITHUB SETUP</div>
+      <div class="steps-title">ONE-TIME SETUP</div>
       ${[
-        ['Create a free GitHub account','github.com/signup — then create a new repository. Suggested name: <span class="step-code">patient-pages</span>'],
-        ['Enable GitHub Pages','Repo → Settings → Pages → Source: Deploy from branch (main, / root) → Save'],
-        ['Set your custom domain','In Pages settings enter <span class="step-code">plans.treasuryaesthetics.ca</span> — then add a CNAME DNS record at your registrar: <span class="step-code">plans → drlatsky-aesthetics.github.io</span>'],
-        ['Generate a Personal Access Token','GitHub → Settings → Developer Settings → Personal Access Tokens (classic) → New token → tick <span class="step-code">repo</span> → copy the token'],
-        ['Paste config above and Save','From this point, every patient page publishes in one click.'],
+        ['Get the agent URL', 'The Skincare backend agent serves and stores patient pages directly — default is <span class="step-code">https://plans.treasuryaesthetics.ca</span>.'],
+        ['Get the publish token', 'This is the PUBLISH_TOKEN value set on the agent’s Railway service — ask whoever manages the deployment for it.'],
+        ['Paste config above and Save', 'From this point, every patient page publishes in one click — the agent stores it on its own persistent volume and serves it at AGENT_URL/<patient-slug>.html.'],
       ].map(([t,d],i)=>`<div class="step"><div class="step-n">${i+1}</div><div><div class="step-title">${t}</div><div class="step-detail">${d}</div></div></div>`).join('')}
-      <div class="alert info" style="margin-top:14px;font-size:10px">🔒 PAT is stored in your browser's localStorage only — never transmitted anywhere except the GitHub API. Birthday password is client-side only; avoid including clinical diagnoses or medications in the notes field.</div>
+      <div class="alert info" style="margin-top:14px;font-size:10px">🔒 The publish token is stored in your browser's localStorage only — never transmitted anywhere except the agent's own publish endpoint. Birthday password is client-side only; avoid including clinical diagnoses or medications in the notes field.</div>
     </div>
   </div>`;
 }
@@ -1149,7 +1122,7 @@ function handleInput(e) {
   const v = el.value;
   const id = el.id;
   const ptMap = {fn:'firstName',ln:'lastName',dob:'dob',sd:'startDate',concern:'concern',notes:'notes'};
-  const ghMap = {'gh-user':'ghUser','gh-repo':'ghRepo','gh-token':'ghToken','gh-domain':'ghDomain'};
+  const ghMap = {'agent-url':'agentUrl','publish-token':'publishToken'};
   if (ptMap[id]) { S.pt[ptMap[id]]=v; updateTopbar(); updateTabMeta(); }
   else if (ghMap[id]) { S[ghMap[id]]=v; updateTopbar(); }
   else if (id==='tx-search') { S.txQ=v; renderContent(); attachListeners(); }
@@ -1166,10 +1139,10 @@ function handleInput(e) {
 }
 
 function readGhInputs() {
-  ['gh-user','gh-repo','gh-token','gh-domain'].forEach(id => {
+  ['agent-url','publish-token'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-      const map = {'gh-user':'ghUser','gh-repo':'ghRepo','gh-token':'ghToken','gh-domain':'ghDomain'};
+      const map = {'agent-url':'agentUrl','publish-token':'publishToken'};
       S[map[id]] = el.value;
     }
   });
